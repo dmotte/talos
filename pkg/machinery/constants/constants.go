@@ -79,6 +79,9 @@ const (
 	// KernelParamCGroups is the legacy kernel parameter not supported anymore.
 	KernelParamCGroups = "talos.unified_cgroup_hierarchy"
 
+	// KernelParamAuditdDisabled is the kernel parameter name for disabling auditd service.
+	KernelParamAuditdDisabled = "talos.auditd.disabled"
+
 	// KernelParamDashboardDisabled is the kernel parameter name for disabling the dashboard.
 	KernelParamDashboardDisabled = "talos.dashboard.disabled"
 
@@ -389,7 +392,7 @@ const (
 
 	// DefaultKubernetesVersion is the default target version of the control plane.
 	// renovate: datasource=github-releases depName=kubernetes/kubernetes
-	DefaultKubernetesVersion = "1.32.0"
+	DefaultKubernetesVersion = "1.32.1"
 
 	// SupportedKubernetesVersions is the number of Kubernetes versions supported by Talos starting from DefaultKubernesVersion going backwards.
 	SupportedKubernetesVersions = 6
@@ -540,7 +543,7 @@ const (
 	TrustdUserID = 51
 
 	// DefaultContainerdVersion is the default container runtime version.
-	DefaultContainerdVersion = "2.0.1"
+	DefaultContainerdVersion = "2.0.2"
 
 	// SystemContainerdNamespace is the Containerd namespace for Talos services.
 	SystemContainerdNamespace = "system"
@@ -697,6 +700,9 @@ const (
 	// PCRPublicKey is the path to the PCR public key file.
 	// https://www.mankier.com/7/systemd-stub#Initrd_Resources
 	PCRPublicKey = SDStubDynamicInitrdPath + "/" + "tpm2-pcr-public-key.pem"
+
+	// UKIPCR is the PCR number where systemd-stub measures the UKI.
+	UKIPCR = 11
 
 	// DefaultCertificateValidityDuration is the default duration for a certificate.
 	DefaultCertificateValidityDuration = x509.DefaultCertificateValidityDuration
@@ -1232,6 +1238,9 @@ const (
 
 	// RegistrydListenAddress is the address to listen on for the registryd service.
 	RegistrydListenAddress = "127.0.0.1:3172"
+
+	// KubernetesInformerDefaultResyncPeriod is the default resync period for Kubernetes informers.
+	KubernetesInformerDefaultResyncPeriod = 30 * time.Second
 )
 
 // See https://linux.die.net/man/3/klogctl

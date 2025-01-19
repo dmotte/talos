@@ -51,6 +51,7 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 
 	taloskubernetes "github.com/siderolabs/talos/pkg/kubernetes"
+	"github.com/siderolabs/talos/pkg/machinery/constants"
 )
 
 // K8sSuite is a base suite for K8s tests.
@@ -638,6 +639,10 @@ func (k8sSuite *K8sSuite) WaitForResource(ctx context.Context, namespace, group,
 // RunFIOTest runs the FIO test with the given storage class and size using kubestr.
 func (k8sSuite *K8sSuite) RunFIOTest(ctx context.Context, storageClasss, size string) error {
 	args := []string{
+		"--outfile",
+		fmt.Sprintf("/tmp/fio-%s.json", storageClasss),
+		"--output",
+		"json",
 		"fio",
 		"--storageclass",
 		storageClasss,
@@ -813,9 +818,12 @@ func (k8sSuite *K8sSuite) SetupNodeInformer(ctx context.Context, nodeName string
 
 	watchCh := make(chan *corev1.Node)
 
-	informerFactory := informers.NewSharedInformerFactoryWithOptions(k8sSuite.Clientset, 30*time.Second, informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-		options.FieldSelector = metadataKeyName + nodeName
-	}))
+	informerFactory := informers.NewSharedInformerFactoryWithOptions(
+		k8sSuite.Clientset, constants.KubernetesInformerDefaultResyncPeriod,
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.FieldSelector = metadataKeyName + nodeName
+		}),
+	)
 
 	nodeInformer := informerFactory.Core().V1().Nodes().Informer()
 	_, err := nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

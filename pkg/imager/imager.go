@@ -20,7 +20,7 @@ import (
 	talosruntime "github.com/siderolabs/talos/internal/app/machined/pkg/runtime"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/board"
 	"github.com/siderolabs/talos/internal/app/machined/pkg/runtime/v1alpha1/platform"
-	"github.com/siderolabs/talos/internal/pkg/secureboot/uki"
+	"github.com/siderolabs/talos/internal/pkg/uki"
 	"github.com/siderolabs/talos/pkg/imager/extensions"
 	"github.com/siderolabs/talos/pkg/imager/overlay/executor"
 	"github.com/siderolabs/talos/pkg/imager/profile"
@@ -103,8 +103,25 @@ func (i *Imager) Execute(ctx context.Context, outputPath string, report *reporte
 		Status:  reporter.StatusSucceeded,
 	})
 
-	// 4. Build UKI unless the output is a kernel or cmdline.
-	if i.prof.Output.Kind != profile.OutKindKernel && i.prof.Output.Kind != profile.OutKindCmdline {
+	// 4. Build UKI if needed
+	needBuildUKI := quirks.New(i.prof.Version).SupportsUKI()
+
+	switch i.prof.Output.Kind {
+	case profile.OutKindUKI:
+		if !needBuildUKI {
+			return "", fmt.Errorf("UKI output is not supported in this Talos version")
+		}
+	case profile.OutKindISO, profile.OutKindImage, profile.OutKindInstaller:
+		needBuildUKI = needBuildUKI && i.prof.SecureBootEnabled()
+	case profile.OutKindCmdline, profile.OutKindKernel, profile.OutKindInitramfs:
+		needBuildUKI = false
+	case profile.OutKindUnknown:
+		fallthrough
+	default:
+		return "", fmt.Errorf("unknown output kind: %s", i.prof.Output.Kind)
+	}
+
+	if needBuildUKI {
 		if err = i.buildUKI(ctx, report); err != nil {
 			return "", err
 		}
