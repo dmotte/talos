@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-01-16T14:10:07Z by kres 3b3f992.
+# Generated on 2025-01-21T10:29:14Z by kres 3075de9.
 
 name: default
 concurrency:
@@ -1564,7 +1564,6 @@ jobs:
       - name: image-cache
         env:
           IMAGE_REGISTRY: registry.dev.siderolabs.io
-          MORE_IMAGES: alpine;registry.k8s.io/conformance:v1.32.1;registry.k8s.io/e2e-test-images/busybox:1.36.1-1;registry.k8s.io/e2e-test-images/agnhost:2.53;registry.k8s.io/e2e-test-images/httpd:2.4.38-4;registry.k8s.io/e2e-test-images/nonewprivs:1.3;registry.k8s.io/e2e-test-images/jessie-dnsutils:1.7;registry.k8s.io/e2e-test-images/nautilus:1.7;registry.k8s.io/e2e-test-images/sample-apiserver:1.29.2;registry.k8s.io/e2e-test-images/nginx:1.14-4;registry.k8s.io/etcd:3.5.16-0;registry.k8s.io/e2e-test-images/httpd:2.4.39-4
           PLATFORM: linux/amd64,linux/arm64
           PUSH: "true"
         run: |
@@ -2848,7 +2847,7 @@ jobs:
     runs-on:
       - self-hosted
       - talos
-    if: contains(fromJSON(needs.default.outputs.labels), 'integration/qemu-csi') || contains(fromJSON(needs.default.outputs.labels), 'integration/qemu-csi-longhorn')
+    if: contains(fromJSON(needs.default.outputs.labels), 'integration/qemu-csi') || contains(fromJSON(needs.default.outputs.labels), 'integration/extensions') || contains(fromJSON(needs.default.outputs.labels), 'integration/qemu-csi-longhorn')
     needs:
       - default
     steps:
@@ -2941,16 +2940,27 @@ jobs:
           IMAGE_REGISTRY: registry.dev.siderolabs.io
         run: |
           make installer-with-extensions
+      - name: kubelet-fat-patch
+        run: |
+          make kubelet-fat-patch
       - name: e2e-qemu-csi-longhorn
         env:
           EXTRA_TEST_ARGS: -talos.csi=longhorn
           GITHUB_STEP_NAME: ${{ github.job}}-e2e-qemu-csi-longhorn
           IMAGE_REGISTRY: registry.dev.siderolabs.io
+          QEMU_MEMORY_WORKERS: "3072"
           QEMU_WORKERS: "3"
           SHORT_INTEGRATION_TEST: "yes"
-          WITH_CONFIG_PATCH: '@_out/installer-extensions-patch.yaml:@hack/test/patches/longhorn.yaml'
+          WITH_CONFIG_PATCH: '@_out/installer-extensions-patch.yaml:@_out/kubelet-fat-patch.yaml:@hack/test/patches/longhorn.yaml'
         run: |
           sudo -E make e2e-qemu
+      - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fio-integration-qemu-csi-longhorn
+          path: |
+            /tmp/fio-*.json
+          retention-days: "180"
       - name: save artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -2959,7 +2969,6 @@ jobs:
           path: |-
             /tmp/logs-*.tar.gz
             /tmp/support-*.zip
-            /tmp/fio-*.json
           retention-days: "5"
   integration-qemu-csi-openebs:
     permissions:
@@ -3054,6 +3063,13 @@ jobs:
         run: |
           sudo -E make e2e-qemu
       - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fio-integration-qemu-csi-openebs
+          path: |
+            /tmp/fio-*.json
+          retention-days: "180"
+      - name: save artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -3061,7 +3077,6 @@ jobs:
           path: |-
             /tmp/logs-*.tar.gz
             /tmp/support-*.zip
-            /tmp/fio-*.json
           retention-days: "5"
   integration-qemu-csi-rook-ceph:
     permissions:
@@ -3155,6 +3170,13 @@ jobs:
         run: |
           sudo -E make e2e-qemu
       - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fio-integration-qemu-csi-rook-ceph
+          path: |
+            /tmp/fio-*.json
+          retention-days: "180"
+      - name: save artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -3162,7 +3184,6 @@ jobs:
           path: |-
             /tmp/logs-*.tar.gz
             /tmp/support-*.zip
-            /tmp/fio-*.json
           retention-days: "5"
   integration-qemu-encrypted-vip:
     permissions:
